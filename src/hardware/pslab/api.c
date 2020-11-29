@@ -114,7 +114,7 @@ static GSList *scan(struct sr_dev_driver *di, GSList *options)
      * usb 2-2: Manufacturer: Silicon Labs
      * cp210x 2-2:1.0: cp210x converter detected
      */
-		if (strncmp(manufacturer, "Silicon Labs", 5))
+		if (strcmp(manufacturer, "Silicon Labs"))
 			continue;
 
 		if (usb_get_port_path(devlist[i], connection_id, sizeof(connection_id)) < 0)
@@ -136,8 +136,8 @@ static GSList *scan(struct sr_dev_driver *di, GSList *options)
 		devc->model = &models[0];
 		sr_sw_limits_init(&devc->sw_limits);
 		sdi->priv = devc;
-		if (pslab_probe_channels(sdi) != SR_OK)
-			continue;
+		//if (pslab_probe_channels(sdi) != SR_OK)
+		//	continue;
 		devices = g_slist_append(devices, sdi);
 	}
 	libusb_free_device_list(devlist, 1);
