@@ -17,6 +17,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/**
+ * For the basic PSLab command protocol, see
+ * https://github.com/fossasia/pslab-firmware/blob/master/docs/CommunicationProtocol.md
+ */
+
 #include <config.h>
 #include <string.h>
 #include "protocol.h"
@@ -141,6 +146,10 @@ static GSList *scan(struct sr_dev_driver *di, GSList *options)
 		devc->model = &models[0];
 		sr_sw_limits_init(&devc->sw_limits);
 		sdi->priv = devc;
+
+    ///////////////
+    ///////////////
+
 		if (pslab_get_version(sdi) != SR_OK)
 			continue;
 		//if (pslab_probe_channels(sdi) != SR_OK)
