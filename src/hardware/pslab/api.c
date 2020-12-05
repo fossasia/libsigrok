@@ -17,44 +17,96 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/**
+ * For the basic PSLab command protocol, see
+ * https://github.com/fossasia/pslab-firmware/blob/master/docs/CommunicationProtocol.md
+ */
+
 #include <config.h>
+#include <libsigrok/libsigrok.h>
+#include "libsigrok-internal.h"
 #include "protocol.h"
 
-static struct sr_dev_driver pslab_driver_info;
+#define SERIALCOMM "115200/8n1"
+
+static const uint32_t scanopts[] = {
+	SR_CONF_CONN,
+	SR_CONF_SERIALCOMM,
+};
+
+static const uint32_t drvopts[] = {
+	SR_CONF_MULTIMETER,
+};
+
+static const uint32_t devopts[] = {
+	SR_CONF_CONTINUOUS,
+	SR_CONF_LIMIT_SAMPLES | SR_CONF_SET,
+	SR_CONF_LIMIT_MSEC | SR_CONF_SET,
+};
+
+static const uint8_t GET_VERSION[] = { 0xb, 0x5 };
 
 static GSList *scan(struct sr_dev_driver *di, GSList *options)
 {
-	struct drv_context *drvc;
-	GSList *devices;
-
-	(void)options;
+	struct dev_context *devc;
+	struct sr_serial_dev_inst *serial;
+	struct sr_dev_inst *sdi;
+	GSList *devices, *l;
+	const char *conn = NULL, *serialcomm = NULL, *pslab_version;
+	uint8_t buf[42]; // TODO: What is reasonable? telefino uses 292
+	size_t len;
+	struct sr_config *src;
 
 	devices = NULL;
-	drvc = di->context;
-	drvc->instances = NULL;
+	len = sizeof(buf);
 
-	/* TODO: scan for devices, either based on a SR_CONF_CONN option
-	 * or on a USB scan. */
+  // based on teleinfo
+	for (l = options; l; l = l->next) {
+		src = l->data;
+		switch (src->key) {
+		case SR_CONF_CONN:
+			conn = g_variant_get_string(src->data, NULL);
+			break;
+		case SR_CONF_SERIALCOMM:
+			serialcomm = g_variant_get_string(src->data, NULL);
+			break;
+	}
+	if (!conn)
+		return NULL;
+	if (!serialcomm)
+		serialcomm = SERIALCOMM;
 
-	return devices;
-}
+	serial = sr_serial_dev_inst_new(conn, serialcomm);
 
-static int dev_open(struct sr_dev_inst *sdi)
-{
-	(void)sdi;
+	if (serial_open(serial, SERIAL_RDONLY) != SR_OK)
+		return NULL;
 
-	/* TODO: get handle from sdi->conn and open it. */
+	sr_info("Probing serial port %s.", conn);
 
-	return SR_OK;
-}
+  // TODO
+	/* Try reading PSLab board version */
+  pslab_version = pslab_get_version(sdi);
+	if (!pslab_version)
+		goto scan_cleanup;
 
-static int dev_close(struct sr_dev_inst *sdi)
-{
-	(void)sdi;
+	sr_info("Found device on port %s.", conn);
 
-	/* TODO: get handle from sdi->conn and close it. */
+	sdi = g_malloc0(sizeof(struct sr_dev_inst));
+	sdi->status = SR_ST_INACTIVE;
+	sdi->vendor = g_strdup("FOSSASIA");
+	sdi->model = g_strdup("PSLab v6"); // TODO: use detected version
+	devc = g_malloc(sizeof(struct dev_context));
+  sdi->inst_type = SR_INST_SERIAL;
+  sdi->conn = serial;
+	sdi->priv = devc;
 
-	return SR_OK;
+
+	devices = g_slist_append(devices, sdi);
+
+scan_cleanup:
+	serial_close(serial);
+
+	return std_scan_complete(di, devices);
 }
 
 static int config_get(uint32_t key, GVariant **data,
@@ -124,15 +176,6 @@ static int dev_acquisition_start(const struct sr_dev_inst *sdi)
 	return SR_OK;
 }
 
-static int dev_acquisition_stop(struct sr_dev_inst *sdi)
-{
-	/* TODO: stop acquisition. */
-
-	(void)sdi;
-
-	return SR_OK;
-}
-
 static struct sr_dev_driver pslab_driver_info = {
 	.name = "pslab",
 	.longname = "PSLab",
@@ -142,13 +185,13 @@ static struct sr_dev_driver pslab_driver_info = {
 	.scan = scan,
 	.dev_list = std_dev_list,
 	.dev_clear = std_dev_clear,
-	.config_get = config_get,
+	.config_get = config_get, // or just NULL
 	.config_set = config_set,
 	.config_list = config_list,
-	.dev_open = dev_open,
-	.dev_close = dev_close,
+	.dev_open = std_serial_dev_open,
+	.dev_close = std_serial_dev_close,
 	.dev_acquisition_start = dev_acquisition_start,
-	.dev_acquisition_stop = dev_acquisition_stop,
+	.dev_acquisition_stop = std_serial_dev_acquisition_stop,
 	.context = NULL,
 };
 SR_REGISTER_DEV_DRIVER(pslab_driver_info);
