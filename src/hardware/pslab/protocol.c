@@ -52,6 +52,40 @@ SR_PRIV int pslab_set_serial_params(struct sr_usb_dev_inst *usb)
 	return SR_OK;
 }
 
+SR_PRIV int pslab_get_version(struct sr_dev_inst *sdi)
+{
+	struct dev_context *devc;
+	struct sr_usb_dev_inst *usb;
+	int len;
+	unsigned char buf[MAX_REPLY_SIZE];
+
+	devc = sdi->priv;
+	usb = sdi->conn;
+
+	sr_dbg("Asking for version.");
+	sr_dbg("  Opening device...");
+	if (sr_dev_open(sdi) != SR_OK)
+		return SR_ERR;
+	sr_dbg("  Setting up serial port...");
+	if (pslab_set_serial_params(usb) != SR_OK)
+		return SR_ERR;
+
+	sr_dbg("  Flushing buffer...");
+	/* Flush anything buffered from a previous run. */
+	do {
+		libusb_bulk_transfer(usb->devhdl, EP_IN, buf, MAX_REPLY_SIZE, &len, 10);
+	} while (len > 2);
+
+	sr_dbg("  Transferribg data...");
+	if (libusb_bulk_transfer(usb->devhdl, EP_OUT, (unsigned char *)devc->model->request,
+			devc->model->request_size, &devc->reply_size, 10) < 0)
+		return SR_ERR;
+
+  // TODO: get version
+	sr_dbg("  Got version: 123TODO");
+	return SR_OK;
+}
+
 /* Due to the modular nature of the Testo hardware, you can't assume
  * which measurements the device will supply. Fetch a single result
  * set synchronously to see which measurements it has. */
@@ -80,7 +114,6 @@ SR_PRIV int pslab_probe_channels(struct sr_dev_inst *sdi)
 	if (libusb_bulk_transfer(usb->devhdl, EP_OUT, (unsigned char *)devc->model->request,
 			devc->model->request_size, &devc->reply_size, 10) < 0)
 		return SR_ERR;
-
 	packet_len = 0;
 	while (TRUE) {
 		if (libusb_bulk_transfer(usb->devhdl, EP_IN, buf, MAX_REPLY_SIZE,

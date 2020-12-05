@@ -23,6 +23,8 @@
 
 #define SERIALCOMM "115200/8n1"
 
+// { 0x2184, 0x0030, "115200/8n1" },
+
 static const uint32_t scanopts[] = {
 	SR_CONF_CONN,
 };
@@ -37,11 +39,13 @@ static const uint32_t devopts[] = {
 	SR_CONF_LIMIT_MSEC | SR_CONF_SET | SR_CONF_GET,
 };
 
-static const uint8_t REQUEST[] = { 0x12, 0, 0, 0, 1, 1, 0x55, 0xd1, 0xb7 };
+static const uint8_t GET_VERSION[] = { 0xb, 0x5 };
 
 static const struct pslab_model models[] = {
-	{ "435", 9, REQUEST },
+	{ "v6", 2, GET_VERSION },
 };
+
+static struct sr_dev_driver pslab_driver_info;
 
 static GSList *scan(struct sr_dev_driver *di, GSList *options)
 {
@@ -131,11 +135,14 @@ static GSList *scan(struct sr_dev_driver *di, GSList *options)
 		sdi->inst_type = SR_INST_USB;
 		sdi->conn = sr_usb_dev_inst_new(libusb_get_bus_number(devlist[i]),
 				libusb_get_device_address(devlist[i]), NULL);
+    sdi->driver = &pslab_driver_info;
 		sdi->connection_id = g_strdup(connection_id);
 		devc = g_malloc(sizeof(struct dev_context));
 		devc->model = &models[0];
 		sr_sw_limits_init(&devc->sw_limits);
 		sdi->priv = devc;
+		if (pslab_get_version(sdi) != SR_OK)
+			continue;
 		//if (pslab_probe_channels(sdi) != SR_OK)
 		//	continue;
 		devices = g_slist_append(devices, sdi);
@@ -159,6 +166,7 @@ static int dev_open(struct sr_dev_inst *sdi)
 	if (ret != SR_OK)
 		return ret;
 
+	sr_dbg("  Detaching USB device...");
 	if (libusb_has_capability(LIBUSB_CAP_SUPPORTS_DETACH_KERNEL_DRIVER)) {
 		if (libusb_kernel_driver_active(usb->devhdl, 0) == 1) {
 			if ((ret = libusb_detach_kernel_driver(usb->devhdl, 0)) < 0) {
@@ -169,6 +177,7 @@ static int dev_open(struct sr_dev_inst *sdi)
 		}
 	}
 
+	sr_dbg("  Claiming USB device interface...");
 	if ((ret = libusb_claim_interface(usb->devhdl, 0))) {
 		sr_err("Failed to claim interface: %s.", libusb_error_name(ret));
 		return SR_ERR;

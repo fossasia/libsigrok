@@ -64,6 +64,7 @@ struct dev_context {
 };
 
 SR_PRIV int pslab_set_serial_params(struct sr_usb_dev_inst *usb);
+SR_PRIV int pslab_get_version(struct sr_dev_inst *sdi);
 SR_PRIV int pslab_probe_channels(struct sr_dev_inst *sdi);
 SR_PRIV void LIBUSB_CALL pslab_receive_transfer(struct libusb_transfer *transfer);
 SR_PRIV int pslab_request_packet(const struct sr_dev_inst *sdi);
