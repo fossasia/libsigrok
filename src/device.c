@@ -668,6 +668,12 @@ SR_API int sr_dev_open(struct sr_dev_inst *sdi)
 {
 	int ret;
 
+  if (!sdi) {
+    sr_dbg("dev open: no sdi");
+  }
+  if (!sdi->driver) {
+    sr_dbg("dev open: no driver");
+  }
 	if (!sdi || !sdi->driver || !sdi->driver->dev_open)
 		return SR_ERR_ARG;
 
