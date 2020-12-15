@@ -31,5 +31,6 @@ struct dev_context {
 };
 
 SR_PRIV int pslab_receive_data(int fd, int revents, void *cb_data);
+SR_PRIV int pslab_get_version(struct sr_dev_inst *sdi);
 
 #endif

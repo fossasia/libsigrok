@@ -44,7 +44,7 @@ static const uint32_t devopts[] = {
 	SR_CONF_LIMIT_MSEC | SR_CONF_SET,
 };
 
-static const uint8_t GET_VERSION[] = { 0xb, 0x5 };
+static const uint8_t CMD_GET_VERSION[] = { 0xb, 0x5 };
 
 static GSList *scan(struct sr_dev_driver *di, GSList *options)
 {
@@ -78,6 +78,7 @@ static GSList *scan(struct sr_dev_driver *di, GSList *options)
 
 	serial = sr_serial_dev_inst_new(conn, serialcomm);
 
+	sr_dbg("  Opening device...");
 	if (serial_open(serial, SERIAL_RDONLY) != SR_OK)
 		return NULL;
 
