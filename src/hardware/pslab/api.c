@@ -46,6 +46,8 @@ static const uint32_t devopts[] = {
 
 static const uint8_t CMD_GET_VERSION[] = { 0xb, 0x5 };
 
+static struct sr_dev_driver pslab_driver_info;
+
 static GSList *scan(struct sr_dev_driver *di, GSList *options)
 {
 	struct dev_context *devc;
