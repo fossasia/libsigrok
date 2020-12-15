@@ -21,7 +21,7 @@
 #include <string.h>
 #include "protocol.h"
 
-// static const uint8_t CMD_GET_VERSION[] = { 0xb, 0x5 };
+static const uint8_t CMD_GET_VERSION[] = { 0xb, 0x5 };
 
 static const uint8_t PSL_VERSION_PACKET_LEN = 2;
 
