@@ -24,27 +24,33 @@
 
 #include <config.h>
 #include <libsigrok/libsigrok.h>
-#include "libsigrok-internal.h"
+// #include "libsigrok-internal.h"
 #include "protocol.h"
 
 #define SERIALCOMM "115200/8n1"
 
+/*
 static const uint32_t scanopts[] = {
 	SR_CONF_CONN,
 	SR_CONF_SERIALCOMM,
 };
+*/
 
+/*
 static const uint32_t drvopts[] = {
 	SR_CONF_MULTIMETER,
 };
+*/
 
+/*
 static const uint32_t devopts[] = {
 	SR_CONF_CONTINUOUS,
 	SR_CONF_LIMIT_SAMPLES | SR_CONF_SET,
 	SR_CONF_LIMIT_MSEC | SR_CONF_SET,
 };
+*/
 
-static const uint8_t CMD_GET_VERSION[] = { 0xb, 0x5 };
+// static const uint8_t CMD_GET_VERSION[] = { 0xb, 0x5 };
 
 static struct sr_dev_driver pslab_driver_info;
 
@@ -54,10 +60,11 @@ static GSList *scan(struct sr_dev_driver *di, GSList *options)
 	struct sr_serial_dev_inst *serial;
 	struct sr_dev_inst *sdi;
 	GSList *devices, *l;
-	const char *conn = NULL, *serialcomm = NULL, *pslab_version;
-	uint8_t buf[42]; // TODO: What is reasonable? telefino uses 292
+	const char *conn = NULL, *serialcomm = NULL;
+	uint8_t buf[42]; // TODO: What is reasonable? teleinfo uses 292
 	size_t len;
 	struct sr_config *src;
+  uint8_t pslab_version;
 
 	devices = NULL;
 	len = sizeof(buf);
