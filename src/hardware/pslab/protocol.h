@@ -27,6 +27,9 @@
 
 #define LOG_PREFIX "pslab"
 
+#define SERIALCOMM "115200/8n1"
+#define SERIALCONN		"/dev/ttyUSB0"
+
 struct dev_context {
 };
 

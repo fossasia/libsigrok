@@ -23,11 +23,9 @@
  */
 
 #include <config.h>
-#include <libsigrok/libsigrok.h>
+// #include <libsigrok/libsigrok.h>
 // #include "libsigrok-internal.h"
 #include "protocol.h"
-
-#define SERIALCOMM "115200/8n1"
 
 /*
 static const uint32_t scanopts[] = {
@@ -60,10 +58,11 @@ static GSList *scan(struct sr_dev_driver *di, GSList *options)
 	struct sr_serial_dev_inst *serial;
 	struct sr_dev_inst *sdi;
 	GSList *devices, *l;
-	const char *conn = NULL, *serialcomm = NULL;
+	const char *conn = NULL, *serialcomm = NULL, *version = "x";
 	uint8_t buf[42]; // TODO: What is reasonable? teleinfo uses 292
 	size_t len;
 	struct sr_config *src;
+	struct udev *udev;
   uint8_t pslab_version;
 
 	devices = NULL;
@@ -81,9 +80,15 @@ static GSList *scan(struct sr_dev_driver *di, GSList *options)
 			break;
 	}
 	if (!conn)
-		return NULL;
+		conn = SERIALCONN;
+		// return NULL;
 	if (!serialcomm)
 		serialcomm = SERIALCOMM;
+
+	udev = udev_new();
+	if (!udev) {
+		sr_err("Failed to initialize udev.");
+	}
 
 	serial = sr_serial_dev_inst_new(conn, serialcomm);
 
@@ -106,6 +111,7 @@ static GSList *scan(struct sr_dev_driver *di, GSList *options)
 	sdi->vendor = g_strdup("FOSSASIA");
 	sdi->model = g_strdup("PSLab v6"); // TODO: use detected version
 	devc = g_malloc(sizeof(struct dev_context));
+	sdi->version = g_strdup(version);
   sdi->inst_type = SR_INST_SERIAL;
   sdi->conn = serial;
 	sdi->priv = devc;
